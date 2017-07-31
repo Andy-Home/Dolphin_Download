@@ -35,9 +35,26 @@ public class Task {
     /**
      * 回调函数
      */
-    DownloadManager.DolphinListener listener;
+    private DownloadManager.DolphinListener listener;
+
+    /**
+     * 下载的文件名
+     */
+    private String fileName = null;
 
     public DownloadManager.DolphinListener getListener() {
         return listener;
+    }
+
+    public URL getUrl() {
+        return url;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 }
