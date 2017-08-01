@@ -31,7 +31,7 @@ public class TaskManager {
     public void addTask(Task task) {
         if (task != null) {
             task.status = Task.START;
-            mTaskManager.addTask(task);
+            mTaskList.add(task);
         }
     }
 

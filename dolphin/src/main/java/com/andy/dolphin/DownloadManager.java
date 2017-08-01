@@ -19,10 +19,18 @@ import java.net.URL;
 
 public class DownloadManager {
     private final static String TAG = "DownloadManager";
-    private TaskManager mTaskManager;
+    private static TaskManager mTaskManager;
+    private static DownloadManager mDownloadManager;
 
-    public DownloadManager() {
+    private DownloadManager() {
         mTaskManager = TaskManager.getInstance();
+    }
+
+    public static DownloadManager getInstance() {
+        if (mDownloadManager == null) {
+            mDownloadManager = new DownloadManager();
+        }
+        return mDownloadManager;
     }
 
     /**
@@ -31,7 +39,7 @@ public class DownloadManager {
      * @param url
      * @param listener
      */
-    public Task download(URL url, DolphinListener listener) {
+    public static Task download(URL url, DolphinListener listener) {
         Task task = new Task(url, listener);
         mTaskManager.addTask(task);
         //TODO:线程管理
@@ -39,7 +47,7 @@ public class DownloadManager {
         return task;
     }
 
-    public Task download(String link, DolphinListener listener) {
+    public static Task download(String link, DolphinListener listener) {
         Task task = null;
         try {
             URL url = new URL(link);
@@ -51,15 +59,15 @@ public class DownloadManager {
         return task;
     }
 
-    public boolean stop(Task task) {
+    public static boolean stop(Task task) {
         return mTaskManager.stopTask(task);
     }
 
-    public boolean restart(Task task) {
+    public static boolean restart(Task task) {
         return mTaskManager.restartTask(task);
     }
 
-    public boolean remove(Task task) {
+    public static boolean remove(Task task) {
         return mTaskManager.removeTask(task);
     }
 

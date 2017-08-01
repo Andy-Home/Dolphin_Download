@@ -25,9 +25,10 @@ public class Task {
     /**
      * 状态值
      */
-    static final int START = 1;
+    public static final int START = 1;
     public static final int PAUSE = 2;
-    static final int RESTART = 3;
+    public static final int RESTART = 3;
+    public static final int FINISH = 4;
 
     /**
      * URL
@@ -42,6 +43,11 @@ public class Task {
      * 下载的文件名
      */
     private String fileName = null;
+
+    /**
+     * 文件已下载内容百分比
+     */
+    private float percent;
 
 
     public Task(URL url, DownloadManager.DolphinListener listener) {
@@ -71,5 +77,13 @@ public class Task {
 
     public int getStatus() {
         return status;
+    }
+
+    public float getPercent() {
+        return percent;
+    }
+
+    public void setPercent(float percent) {
+        this.percent = percent;
     }
 }
