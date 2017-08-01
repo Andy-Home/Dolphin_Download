@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Dolphin</string>
+    <string name="download_success">Download Success</string>
 </resources>

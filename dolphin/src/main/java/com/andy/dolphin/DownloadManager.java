@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.andy.dolphin.task.Task;
 import com.andy.dolphin.task.TaskManager;
+import com.andy.dolphin.thread.DownloadThread;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,16 +25,25 @@ public class DownloadManager {
         mTaskManager = TaskManager.getInstance();
     }
 
-    public Task download(URL url) {
-
-        return null;
+    /**
+     * 下载功能
+     *
+     * @param url
+     * @param listener
+     */
+    public Task download(URL url, DolphinListener listener) {
+        Task task = new Task(url, listener);
+        mTaskManager.addTask(task);
+        //TODO:线程管理
+        new Thread(new DownloadThread(task)).start();
+        return task;
     }
 
-    public Task download(String link) {
+    public Task download(String link, DolphinListener listener) {
         Task task = null;
         try {
             URL url = new URL(link);
-            task = download(url);
+            task = download(url, listener);
         } catch (MalformedURLException e) {
             Log.d(TAG, "上传链接错误");
             e.printStackTrace();
@@ -42,25 +52,45 @@ public class DownloadManager {
     }
 
     public boolean stop(Task task) {
-
-        return false;
+        return mTaskManager.stopTask(task);
     }
 
     public boolean restart(Task task) {
-        return false;
+        return mTaskManager.restartTask(task);
     }
 
     public boolean remove(Task task) {
-        return false;
+        return mTaskManager.removeTask(task);
     }
 
     public interface DolphinListener {
-        void success(String result);
+        /**
+         * 下载成功
+         *
+         * @param type 结果
+         */
+        void success(int type);
 
-        void failure(String error);
+        /**
+         * 下载失败
+         *
+         * @param type 结果
+         */
+        void failure(int type);
 
+        /**
+         * 下载进度
+         *
+         * @param length   文件大小
+         * @param download 已下载大小
+         */
         void progress(float length, float download);
 
-        void cancle(int type);
+        /**
+         * 暂停任务
+         *
+         * @param type 结果
+         */
+        void stop(int type);
     }
 }

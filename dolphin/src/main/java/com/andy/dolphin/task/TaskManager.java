@@ -38,7 +38,7 @@ public class TaskManager {
     public boolean removeTask(Task task) {
         if (task != null) {
             for (Task t : mTaskList) {
-                if (t.key == task.key) {
+                if (t.key.equals(task.key)) {
                     mTaskList.remove(t);
                     return true;
                 }
@@ -50,7 +50,7 @@ public class TaskManager {
     public boolean stopTask(Task task) {
         if (task != null) {
             for (Task t : mTaskList) {
-                if (t.key == task.key) {
+                if (t.key.equals(task.key)) {
                     t.status = Task.PAUSE;
                     return true;
                 }
@@ -62,7 +62,7 @@ public class TaskManager {
     public boolean restartTask(Task task) {
         if (task != null) {
             for (Task t : mTaskList) {
-                if (t.key == task.key) {
+                if (t.key.equals(task.key)) {
                     t.status = Task.RESTART;
                     return true;
                 }

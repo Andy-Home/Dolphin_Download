@@ -3,6 +3,7 @@ package com.andy.dolphin.task;
 import com.andy.dolphin.DownloadManager;
 
 import java.net.URL;
+import java.util.Random;
 
 /**
  * 下载任务实例
@@ -14,7 +15,7 @@ public class Task {
     /**
      * 唯一标识
      */
-    int key;
+    String key;
 
     /**
      * 下载状态
@@ -25,7 +26,7 @@ public class Task {
      * 状态值
      */
     static final int START = 1;
-    static final int PAUSE = 2;
+    public static final int PAUSE = 2;
     static final int RESTART = 3;
 
     /**
@@ -42,6 +43,16 @@ public class Task {
      */
     private String fileName = null;
 
+
+    public Task(URL url, DownloadManager.DolphinListener listener) {
+        this.url = url;
+        this.listener = listener;
+        status = START;
+        Random random = new Random();
+        int a = random.nextInt(1000);
+        key = "andy" + a + System.currentTimeMillis();
+    }
+
     public DownloadManager.DolphinListener getListener() {
         return listener;
     }
@@ -56,5 +67,9 @@ public class Task {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public int getStatus() {
+        return status;
     }
 }
