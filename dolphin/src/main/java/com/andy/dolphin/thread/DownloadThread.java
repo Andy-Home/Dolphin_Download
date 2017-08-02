@@ -1,9 +1,9 @@
 package com.andy.dolphin.thread;
 
-import android.os.Environment;
+import android.util.Log;
 
-import com.andy.dolphin.DownloadManager;
 import com.andy.dolphin.task.Task;
+import com.andy.dolphin.task.TaskManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,23 +20,11 @@ import java.net.URL;
  */
 
 public class DownloadThread implements Runnable {
-    public static int DOWNLOAD_SUCCESS = 1;
-    public static int DOWNLOAD_FAILURE_NETWORK = 2;
-    public static int DOWNLOAD_FAILURE_EXCEPTION = 3;
-    public static int DOWNLOAD_PAUSE = 4;
-
-    private static final String PATH = Environment.getExternalStorageDirectory() + Environment.DIRECTORY_DOWNLOADS;
-    private DownloadManager.DolphinListener listener;
     private URL url;
     private Task task;
 
     public DownloadThread(Task task) {
-        listener = task.getListener();
         url = task.getUrl();
-
-        if (task.getFileName() == null) {
-            task.setFileName(getFileName());
-        }
         this.task = task;
     }
 
@@ -49,48 +37,50 @@ public class DownloadThread implements Runnable {
             con.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.8");
             con.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
             con.setRequestProperty("Connection", "keep-alive");
-            File file = new File(PATH, task.getFileName());
+            File file = new File(task.getFilePath());
+            long readLength = 0;
             if (file.exists()) {
+                Log.d("文件是否存在？", "Yes");
+                readLength = file.length();
                 con.setRequestProperty("RANGE", "bytes=" + file.length() + "-");
+            } else {
+                Log.d("文件是否存在？", "No");
             }
+            Log.d("request", con.getRequestProperties().toString());
             con.connect();
             if (con.getResponseCode() == 200) {
                 int total = con.getContentLength();
+                Log.d("文件大小？", "" + total);
+                Log.d("header", con.getHeaderFields().toString());
                 InputStream from = con.getInputStream();
                 OutputStream dest = new FileOutputStream(file);
                 byte[] read = new byte[1024];
-                int readLength = 0, length;
+                long length;
                 while ((length = from.read(read)) != -1 && task.getStatus() != Task.PAUSE) {
                     dest.write(read);
                     readLength += length;
-                    listener.progress(total, readLength);
+                    task.setPercent((float) readLength / total);
+                    TaskManager.getInstance().notify(TaskManager.PROGRESS);
                 }
                 dest.flush();
                 dest.close();
                 from.close();
                 if (task.getStatus() == Task.PAUSE) {
-                    listener.stop(DOWNLOAD_PAUSE);
+                    task.setStatus(Task.PAUSE);
+                    TaskManager.getInstance().notify(TaskManager.DOWNLOAD_PAUSE);
                 } else {
-                    listener.success(DOWNLOAD_SUCCESS);
+                    task.setStatus(Task.FINISH);
+                    TaskManager.getInstance().notify(TaskManager.DOWNLOAD_SUCCESS);
                 }
+
             } else {
-                listener.failure(DOWNLOAD_FAILURE_NETWORK);
+                task.setStatus(Task.ERROR);
+                TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE);
             }
         } catch (IOException e) {
             e.printStackTrace();
-            listener.failure(DOWNLOAD_FAILURE_EXCEPTION);
+            task.setStatus(Task.ERROR);
+            TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE);
         }
-    }
-
-    /**
-     * 获取文件名
-     */
-    private String getFileName() {
-        String link = url.toString();
-        //类似https://downloads.gradle.org/distributions/gradle-4.1-milestone-1-bin.zip链接的处理方式
-        if (!link.contains("?")) {
-            return link.substring(link.lastIndexOf("/") + 1);
-        }
-        return null;
     }
 }

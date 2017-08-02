@@ -77,11 +77,12 @@ public class DownloadAdapter extends BaseAdapter {
         } else {
             viewHolder.oper.setBackgroundResource(R.drawable.start);
         }
-        viewHolder.mProgress.setProgress((int) (task.getPercent() * 100));
+        int percent = (int) (task.getPercent() * 100);
+        viewHolder.mProgress.setProgress(percent);
         return convertView;
     }
 
-    class ViewHolder {
+    private class ViewHolder {
         ImageView oper;
         ProgressBar mProgress;
     }
