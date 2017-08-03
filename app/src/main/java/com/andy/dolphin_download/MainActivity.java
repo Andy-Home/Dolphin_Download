@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements DolphinObserver {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DownloadManager.download("http://downloads.gradle.org/distributions/gradle-4.1-rc-2-bin.zip");
+                DownloadManager.download("https://github.com/Andy-Home/Rabbit_Log/archive/master.zip");
             }
         });
     }

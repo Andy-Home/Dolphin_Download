@@ -52,6 +52,10 @@ public class DownloadThread implements Runnable {
                     if (fileName == null) {
                         fileName = con.getURL().getFile();
                     }
+                    if (fileName.contains("filename=")) {
+                        fileName = fileName.split("filename=")[1];
+                    }
+
                     if (fileName.contains("/")) {
                         fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
                     }
