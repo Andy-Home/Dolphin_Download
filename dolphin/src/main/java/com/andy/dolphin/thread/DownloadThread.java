@@ -2,6 +2,7 @@ package com.andy.dolphin.thread;
 
 import android.util.Log;
 
+import com.andy.dolphin.DownloadManager;
 import com.andy.dolphin.task.Task;
 import com.andy.dolphin.task.TaskManager;
 
@@ -32,26 +33,33 @@ public class DownloadThread implements Runnable {
     public void run() {
         try {
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestProperty("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36");
-            con.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.8");
-            con.setRequestProperty("Accept-Encoding", "gzip, deflate, br");
-            con.setRequestProperty("Connection", "keep-alive");
-            File file = new File(task.getFilePath());
+
             long readLength = 0;
-            if (file.exists()) {
-                Log.d("文件是否存在？", "Yes");
+            File file = null;
+            String fileName = task.getFileName();
+            if (fileName != null) {
+                file = new File(DownloadManager.downloadDirectory + File.separator + fileName);
+                
                 readLength = file.length();
                 con.setRequestProperty("RANGE", "bytes=" + file.length() + "-");
-            } else {
-                Log.d("文件是否存在？", "No");
             }
-            Log.d("request", con.getRequestProperties().toString());
             con.connect();
             if (con.getResponseCode() == 200) {
                 int total = con.getContentLength();
                 Log.d("文件大小？", "" + total);
-                Log.d("header", con.getHeaderFields().toString());
+                if (fileName == null) {
+                    fileName = con.getHeaderField("Content-Disposition");
+                    if (fileName == null) {
+                        fileName = con.getURL().getFile();
+                    }
+                    if (fileName.contains("/")) {
+                        fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
+                    }
+                    fileName = getFileName(fileName);
+                    task.setFileName(fileName);
+
+                    file = new File(DownloadManager.downloadDirectory + File.separator + fileName);
+                }
                 InputStream from = con.getInputStream();
                 OutputStream dest = new FileOutputStream(file);
                 byte[] read = new byte[1024];
@@ -60,27 +68,76 @@ public class DownloadThread implements Runnable {
                     dest.write(read);
                     readLength += length;
                     task.setPercent((float) readLength / total);
-                    TaskManager.getInstance().notify(TaskManager.PROGRESS);
+                    TaskManager.getInstance().notify(TaskManager.PROGRESS, task.getKey());
                 }
                 dest.flush();
                 dest.close();
                 from.close();
                 if (task.getStatus() == Task.PAUSE) {
-                    task.setStatus(Task.PAUSE);
-                    TaskManager.getInstance().notify(TaskManager.DOWNLOAD_PAUSE);
+                    TaskManager.getInstance().notify(TaskManager.DOWNLOAD_PAUSE, task.getKey());
                 } else {
                     task.setStatus(Task.FINISH);
-                    TaskManager.getInstance().notify(TaskManager.DOWNLOAD_SUCCESS);
+                    TaskManager.getInstance().notify(TaskManager.DOWNLOAD_SUCCESS, task.getKey());
                 }
 
             } else {
                 task.setStatus(Task.ERROR);
-                TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE);
+                TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE, task.getKey());
             }
         } catch (IOException e) {
             e.printStackTrace();
             task.setStatus(Task.ERROR);
-            TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE);
+            TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE, task.getKey());
         }
+    }
+
+    private String getFileName(String tempName) {
+        //检索下载路径中是否已存在该路径名
+        File dir = new File(DownloadManager.downloadDirectory);
+        File[] files = dir.listFiles();
+
+        String type;
+        String fileName = "";
+        boolean check;
+        if (tempName.contains(".")) {
+            String[] temp = tempName.split("\\.");
+            if (temp.length == 2) {
+                fileName = tempName.split("\\.")[0];
+            } else if (temp.length > 2) {
+                for (int i = 0; i < temp.length - 2; i++) {
+                    fileName += temp[i] + ".";
+                }
+                fileName += temp[temp.length - 2];
+            }
+            type = temp[temp.length - 1];
+            check = true;
+        } else {
+            fileName = tempName;
+            type = "";
+            check = false;
+        }
+        int flag = 0;
+        for (File f : files) {
+            String name = f.getName();
+            if (check) {
+                if (name.contains(".")) {
+                    String[] temp = name.split("\\.");
+                    if (temp[0].equals(fileName) && temp[1].equals(type)) {
+                        flag++;
+                    }
+                }
+            } else {
+                if (name.equals(fileName)) {
+                    flag++;
+                }
+            }
+        }
+        if (flag > 0) {
+            fileName += "(" + flag + ")";
+        }
+        if (check) {
+            return fileName + "." + type;
+        }
+        return fileName;
     }
 }

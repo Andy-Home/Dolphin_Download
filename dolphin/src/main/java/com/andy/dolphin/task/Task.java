@@ -1,7 +1,8 @@
 package com.andy.dolphin.task;
 
-import android.content.Context;
-import android.os.Environment;
+import android.util.Log;
+
+import com.andy.dolphin.thread.DownloadThread;
 
 import java.net.URL;
 import java.util.Random;
@@ -40,45 +41,29 @@ public class Task {
     /**
      * 下载的文件名
      */
-    private String filePath = null;
+    private String fileName = null;
 
     /**
      * 文件已下载内容百分比
      */
     private float percent;
 
+    /**
+     * 下载线程
+     */
+    private DownloadThread mDownloadThread;
 
-    public Task(URL url, Context context) {
+    public Task(URL url) {
         this.url = url;
         status = START;
         Random random = new Random();
         int a = random.nextInt(1000);
         key = "andy" + a + System.currentTimeMillis();
-        filePath = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getPath() + "/" + getFileName();
-    }
-
-    /**
-     * 获取文件名
-     */
-    private String getFileName() {
-        String link = url.toString();
-        //类似https://downloads.gradle.org/distributions/gradle-4.1-milestone-1-bin.zip链接的处理方式
-        if (!link.contains("?")) {
-            return link.substring(link.lastIndexOf("/") + 1);
-        }
-        return null;
+        mDownloadThread = new DownloadThread(this);
     }
 
     public URL getUrl() {
         return url;
-    }
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
     }
 
     public int getStatus() {
@@ -87,6 +72,15 @@ public class Task {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+        Log.d("文件名", fileName);
     }
 
     public float getPercent() {
@@ -99,5 +93,9 @@ public class Task {
 
     public String getKey() {
         return key;
+    }
+
+    public DownloadThread getDownloadThread() {
+        return mDownloadThread;
     }
 }

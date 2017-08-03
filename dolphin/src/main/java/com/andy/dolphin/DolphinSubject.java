@@ -24,7 +24,8 @@ public interface DolphinSubject {
     /**
      * 通知订阅者更新消息
      *
-     * @param type 消息类型
+     * @param type  消息类型
+     * @param key   任务唯一标志
      */
-    void notify(int type);
+    void notify(int type, String key);
 }

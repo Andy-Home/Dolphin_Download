@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity implements DolphinObserver {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        DownloadManager.getInstance();
+        DownloadManager.getInstance(this);
         TaskManager.getInstance().attach(this);
         findView();
 
@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements DolphinObserver {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DownloadManager.download(getApplicationContext(), "https://github.com/Andy-Home/Rabbit_Log/archive/master.zip");
+                DownloadManager.download("http://downloads.gradle.org/distributions/gradle-4.1-rc-2-bin.zip");
             }
         });
     }
