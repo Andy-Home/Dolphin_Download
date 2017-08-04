@@ -132,7 +132,7 @@ public class TaskManager implements DolphinSubject {
                 case DOWNLOAD_PAUSE:
                     Log.d(TAG, "下载暂停：" + task.key);
                     task.status = Task.PAUSE;
-                    if (!mPauseTaskList.contains(task)) {
+                    if (!mPauseTaskList.contains(task) && !mWaitTaskList.contains(task)) {
                         mPauseTaskList.add(task);
                         mRuningTaskList.remove(task);
                     }
@@ -168,11 +168,17 @@ public class TaskManager implements DolphinSubject {
                     task.status = Task.RESTART;
                     if (mRuningTaskList.size() >= downloadThreadNum) {
                         Task t = mRuningTaskList.get(0);
+                        t.status = Task.PAUSE;
                         mWaitTaskList.add(t);
-                        mRuningTaskList.remove(t);
+                        mRuningTaskList.remove(0);
                     }
                     mRuningTaskList.add(task);
-                    mPauseTaskList.remove(task);
+                    if (mPauseTaskList.contains(task)) {
+                        mPauseTaskList.remove(task);
+                    } else {
+                        mWaitTaskList.remove(task);
+                    }
+
                     mPool.execute(task.getDownloadThread());
                     break;
                 case PAUSE_TASK:
