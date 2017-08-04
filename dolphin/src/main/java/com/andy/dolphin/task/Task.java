@@ -14,6 +14,7 @@ import java.util.Random;
  */
 
 public class Task {
+    private final String TAG = "Task";
     /**
      * 唯一标识
      */
@@ -80,7 +81,7 @@ public class Task {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
-        Log.d("文件名", fileName);
+        Log.d(TAG, "文件名:" + fileName);
     }
 
     public float getPercent() {

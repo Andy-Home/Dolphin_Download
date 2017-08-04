@@ -2,11 +2,14 @@ package com.andy.dolphin.task;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.andy.dolphin.DolphinObserver;
 import com.andy.dolphin.DolphinSubject;
+import com.andy.dolphin.DownloadManager;
 import com.andy.dolphin.thread.ThreadPool;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +20,7 @@ import java.util.List;
  */
 
 public class TaskManager implements DolphinSubject {
+    private final String TAG = "TaskManager";
     /**
      * 等待下载的任务集合
      */
@@ -28,9 +32,14 @@ public class TaskManager implements DolphinSubject {
     private List<Task> mRuningTaskList = new ArrayList<>();
 
     /**
-     * 已完结任务数
+     * 已完结任务集合
      */
     private List<Task> mFinishTaskList = new ArrayList<>();
+
+    /**
+     * 暂停任务集合
+     */
+    private List<Task> mPauseTaskList = new ArrayList<>();
 
     /**
      * 观察者集合
@@ -102,41 +111,60 @@ public class TaskManager implements DolphinSubject {
                 }
             }
         }
+
+        if (task == null) {
+            for (Task t : mPauseTaskList) {
+                if (t.key.equals(key)) {
+                    task = t;
+                }
+            }
+        }
         //根据type值,处理不同情况
         if (task != null) {
             switch (type) {
                 case DOWNLOAD_SUCCESS:
+                    Log.d(TAG, "下载成功：" + task.key);
                     task.status = Task.FINISH;
                     mFinishTaskList.add(task);
                     mRuningTaskList.remove(task);
                     startNewTask();
                     break;
                 case DOWNLOAD_PAUSE:
+                    Log.d(TAG, "下载暂停：" + task.key);
                     task.status = Task.PAUSE;
-                    mWaitTaskList.add(task);
-                    mRuningTaskList.remove(task);
+                    if (!mPauseTaskList.contains(task)) {
+                        mPauseTaskList.add(task);
+                        mRuningTaskList.remove(task);
+                    }
                     startNewTask();
                     break;
                 case DOWNLOAD_FAILURE:
+                    Log.d(TAG, "下载失败：" + task.key);
                     task.status = Task.ERROR;
-                    mWaitTaskList.add(task);
+                    mPauseTaskList.add(task);
                     mRuningTaskList.remove(task);
                     startNewTask();
                     break;
                 case ADD_TASK:
+                    Log.d(TAG, "添加任务：" + task.key);
                     task.status = Task.PAUSE;
                     startNewTask();
                     break;
                 case REMOVE_TASK:
+                    Log.d(TAG, "移除任务：" + task.key);
                     if (mRuningTaskList.contains(task)) {
                         mRuningTaskList.remove(task);
                     } else if (mWaitTaskList.contains(task)) {
                         mWaitTaskList.remove(task);
                     } else if (mFinishTaskList.contains(task)) {
                         mFinishTaskList.remove(task);
+                    } else if (mPauseTaskList.contains(task)) {
+                        mPauseTaskList.remove(task);
                     }
+                    clearTask(task);
                     break;
                 case RESTART_TASK:
+                    Log.d(TAG, "重启任务：" + task.key);
                     task.status = Task.RESTART;
                     if (mRuningTaskList.size() >= downloadThreadNum) {
                         Task t = mRuningTaskList.get(0);
@@ -144,18 +172,25 @@ public class TaskManager implements DolphinSubject {
                         mRuningTaskList.remove(t);
                     }
                     mRuningTaskList.add(task);
+                    mPauseTaskList.remove(task);
                     mPool.execute(task.getDownloadThread());
                     break;
                 case PAUSE_TASK:
+                    Log.d(TAG, "暂停任务：" + task.key);
+                    if (task.status == Task.START || task.status == Task.RESTART) {
+                        task.status = Task.PAUSE;
+                        mPauseTaskList.add(task);
+                        mRuningTaskList.remove(task);
+                    }
                     task.status = Task.PAUSE;
                     break;
             }
-
+            final Task t = task;
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     for (DolphinObserver observer : mObservers) {
-                        observer.update(type);
+                        observer.update(type, t);
                     }
                 }
             });
@@ -171,10 +206,26 @@ public class TaskManager implements DolphinSubject {
                 Task task = mWaitTaskList.get(0);
                 task.status = Task.START;
                 mRuningTaskList.add(task);
+                Log.d(TAG, "开始任务下载：" + task.key);
                 mPool.execute(task.getDownloadThread());
                 mWaitTaskList.remove(0);
             }
         }
+    }
+
+    /**
+     * 清除任务
+     */
+    private void clearTask(Task task) {
+        //改变状态,下载线程结束
+        task.status = Task.PAUSE;
+        if (task.getFileName() != null) {
+            File file = new File(DownloadManager.downloadDirectory + File.separator + task.getFileName());
+            if (file.delete()) {
+                Log.d(TAG, task.getKey() + " 任务文件删除成功");
+            }
+        }
+
     }
 
     /**
@@ -222,6 +273,7 @@ public class TaskManager implements DolphinSubject {
         allTask.addAll(mRuningTaskList);
         allTask.addAll(mWaitTaskList);
         allTask.addAll(mFinishTaskList);
+        allTask.addAll(mPauseTaskList);
         return allTask;
     }
 

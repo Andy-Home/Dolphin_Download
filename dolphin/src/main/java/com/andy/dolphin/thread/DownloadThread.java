@@ -6,6 +6,7 @@ import com.andy.dolphin.DownloadManager;
 import com.andy.dolphin.task.Task;
 import com.andy.dolphin.task.TaskManager;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.net.URL;
  */
 
 public class DownloadThread implements Runnable {
+    private final String TAG = "DownloadThread";
     private URL url;
     private Task task;
 
@@ -46,7 +48,8 @@ public class DownloadThread implements Runnable {
             con.connect();
             if (con.getResponseCode() == 200) {
                 int total = con.getContentLength();
-                Log.d("文件大小？", "" + total);
+                Log.d(TAG, "文件大小:" + total);
+                //当初次创建文件时,获取文件名
                 if (fileName == null) {
                     fileName = con.getHeaderField("Content-Disposition");
                     if (fileName == null) {
@@ -64,14 +67,20 @@ public class DownloadThread implements Runnable {
 
                     file = new File(DownloadManager.downloadDirectory + File.separator + fileName);
                 }
+                //写入数据
                 InputStream from = con.getInputStream();
-                OutputStream dest = new FileOutputStream(file);
+                OutputStream dest = new BufferedOutputStream(new FileOutputStream(file));
                 byte[] read = new byte[1024];
                 long length;
+                float percent = 0.0f;
+                Log.d(TAG, "正在下载：" + task.getKey());
                 while ((length = from.read(read)) != -1 && task.getStatus() != Task.PAUSE) {
                     dest.write(read);
                     readLength += length;
-                    task.setPercent((float) readLength / total);
+                    if (((float) readLength / total) - percent >= 0.001 || ((float) readLength / total) == 1) {
+                        percent = (float) readLength / total;
+                        task.setPercent(percent);
+                    }
                     TaskManager.getInstance().notify(TaskManager.PROGRESS, task.getKey());
                 }
                 dest.flush();
@@ -80,29 +89,23 @@ public class DownloadThread implements Runnable {
                 if (task.getStatus() == Task.PAUSE) {
                     TaskManager.getInstance().notify(TaskManager.DOWNLOAD_PAUSE, task.getKey());
                 } else {
-                    task.setStatus(Task.FINISH);
                     TaskManager.getInstance().notify(TaskManager.DOWNLOAD_SUCCESS, task.getKey());
                 }
-
             } else {
-                task.setStatus(Task.ERROR);
                 TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE, task.getKey());
             }
+            con.disconnect();
         } catch (IOException e) {
             e.printStackTrace();
-            task.setStatus(Task.ERROR);
             TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE, task.getKey());
         }
     }
 
     private String getFileName(String tempName) {
-        //检索下载路径中是否已存在该路径名
-        File dir = new File(DownloadManager.downloadDirectory);
-        File[] files = dir.listFiles();
-
         String type;
         String fileName = "";
         boolean check;
+        //获取临时文件名的名字与文件类型后缀
         if (tempName.contains(".")) {
             String[] temp = tempName.split("\\.");
             if (temp.length == 2) {
@@ -120,18 +123,24 @@ public class DownloadThread implements Runnable {
             type = "";
             check = false;
         }
+        //检索下载路径中是否已存在该路径名
+        File dir = new File(DownloadManager.downloadDirectory);
+        File[] files = dir.listFiles();
+
         int flag = 0;
         for (File f : files) {
             String name = f.getName();
             if (check) {
                 if (name.contains(".")) {
-                    String[] temp = name.split("\\.");
-                    if (temp[0].equals(fileName) && temp[1].equals(type)) {
+                    String tempFileName = name.substring(0, name.lastIndexOf("."));
+                    String tempFileType = name.substring(name.lastIndexOf(".") + 1);
+                    if ((tempFileName.equals(fileName) || tempFileName.substring(0, tempFileName.length() - 3).equals(fileName))
+                            && tempFileType.equals(type)) {
                         flag++;
                     }
                 }
             } else {
-                if (name.equals(fileName)) {
+                if (name.equals(fileName) || name.substring(0, name.length() - 3).equals(fileName)) {
                     flag++;
                 }
             }

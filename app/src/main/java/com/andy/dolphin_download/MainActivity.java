@@ -25,10 +25,10 @@ public class MainActivity extends AppCompatActivity implements DolphinObserver {
         DownloadManager.getInstance(this);
         TaskManager.getInstance().attach(this);
         findView();
-
     }
 
     private DownloadAdapter mAdapter;
+
     private void findView() {
 
         mListView = (ListView) findViewById(R.id.list);
@@ -40,16 +40,31 @@ public class MainActivity extends AppCompatActivity implements DolphinObserver {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DownloadManager.download("https://github.com/Andy-Home/Rabbit_Log/archive/master.zip");
+                DownloadManager.download("http://services.gradle.org/distributions/gradle-4.1-rc-2-src.zip");
             }
         });
     }
 
     @Override
-    public void update(int type) {
-        mTasks.clear();
-        mTasks.addAll(TaskManager.getInstance().getTaskList());
-        mAdapter.notifyDataSetChanged();
+    public void update(int type, Task task) {
+        if (type == TaskManager.PROGRESS) {
+            int position = mTasks.indexOf(task);
+            /**第一个可见的位置**/
+            int firstVisiblePosition = mListView.getFirstVisiblePosition();
+            /**最后一个可见的位置**/
+            int lastVisiblePosition = mListView.getLastVisiblePosition();
+
+            /**在看见范围内才更新，不可见的滑动后自动会调用getView方法更新**/
+            if (position >= firstVisiblePosition && position <= lastVisiblePosition) {
+                /**获取指定位置view对象**/
+                View view = mListView.getChildAt(position - firstVisiblePosition);
+                mAdapter.getView(position, view, mListView);
+            }
+        } else {
+            mTasks.clear();
+            mTasks.addAll(TaskManager.getInstance().getTaskList());
+            mAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override
