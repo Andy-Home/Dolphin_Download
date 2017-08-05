@@ -45,6 +45,11 @@ public class Task {
     private String fileName = null;
 
     /**
+     * 文件大小
+     */
+    private int fileLength = -1;
+
+    /**
      * 文件已下载内容百分比
      */
     private float percent;
@@ -71,10 +76,6 @@ public class Task {
         return status;
     }
 
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
     public String getFileName() {
         return fileName;
     }
@@ -94,6 +95,14 @@ public class Task {
 
     public String getKey() {
         return key;
+    }
+
+    public int getFileLength() {
+        return fileLength;
+    }
+
+    public void setFileLength(int fileLength) {
+        this.fileLength = fileLength;
     }
 
     public DownloadThread getDownloadThread() {

@@ -41,55 +41,80 @@ public class DownloadThread implements Runnable {
             String fileName = task.getFileName();
             if (fileName != null) {
                 file = new File(DownloadManager.downloadDirectory + File.separator + fileName);
-                
                 readLength = file.length();
-                con.setRequestProperty("RANGE", "bytes=" + file.length() + "-");
+                con.setRequestProperty("RANGE", "bytes=" + readLength + "-");
+                Log.d(TAG, "RANGE:byte=" + readLength + "-");
             }
             con.connect();
-            if (con.getResponseCode() == 200) {
+            Log.d(TAG, "网络应答标志：" + con.getResponseCode());
+            if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
                 int total = con.getContentLength();
-                Log.d(TAG, "文件大小:" + total);
-                //当初次创建文件时,获取文件名
-                if (fileName == null) {
-                    fileName = con.getHeaderField("Content-Disposition");
-                    if (fileName == null) {
-                        fileName = con.getURL().getFile();
-                    }
-                    if (fileName.contains("filename=")) {
-                        fileName = fileName.split("filename=")[1];
-                    }
-
-                    if (fileName.contains("/")) {
-                        fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
-                    }
-                    fileName = getFileName(fileName);
-                    task.setFileName(fileName);
-
-                    file = new File(DownloadManager.downloadDirectory + File.separator + fileName);
-                }
-                //写入数据
-                InputStream from = con.getInputStream();
-                OutputStream dest = new BufferedOutputStream(new FileOutputStream(file));
-                byte[] read = new byte[1024];
-                long length;
-                float percent = 0.0f;
-                Log.d(TAG, "正在下载：" + task.getKey());
-                while ((length = from.read(read)) != -1 && task.getStatus() != Task.PAUSE) {
-                    dest.write(read);
-                    readLength += length;
-                    if (((float) readLength / total) - percent >= 0.001 || ((float) readLength / total) == 1) {
-                        percent = (float) readLength / total;
-                        task.setPercent(percent);
-                    }
-                    TaskManager.getInstance().notify(TaskManager.PROGRESS, task.getKey());
-                }
-                dest.flush();
-                dest.close();
-                from.close();
-                if (task.getStatus() == Task.PAUSE) {
-                    TaskManager.getInstance().notify(TaskManager.DOWNLOAD_PAUSE, task.getKey());
+                if (total == -1) {
+                    TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE, task.getKey());
                 } else {
-                    TaskManager.getInstance().notify(TaskManager.DOWNLOAD_SUCCESS, task.getKey());
+
+                    //当初次创建文件时,获取文件名
+                    if (fileName == null) {
+                        fileName = con.getHeaderField("Content-Disposition");
+                        if (fileName == null) {
+                            fileName = con.getURL().getFile();
+                        }
+                        if (fileName.contains("filename=")) {
+                            fileName = fileName.split("filename=")[1];
+                        }
+
+                        if (fileName.contains("/")) {
+                            fileName = fileName.substring(fileName.lastIndexOf("/") + 1);
+                        }
+                        if (fileName.contains("\"")) {
+                            fileName = fileName.replace("\"", "");
+                            Log.d(TAG, "替换“符号");
+                        }
+
+                        fileName = getFileName(fileName);
+                        task.setFileName(fileName);
+
+                        file = new File(DownloadManager.downloadDirectory + File.separator + fileName);
+                    }
+                    //写入数据
+                    InputStream from = con.getInputStream();
+                    OutputStream dest;
+                    if (task.getFileLength() == -1) {
+                        task.setFileLength(total);
+                        dest = new BufferedOutputStream(new FileOutputStream(file));
+                    } else {
+                        //如果传输的内容为全部文件，重新开始下载文件内容
+                        //如果传输的内容为文件未下载内容,传输内容接着后面写入
+                        if (total == task.getFileLength()) {
+                            readLength = 0;
+                            dest = new BufferedOutputStream(new FileOutputStream(file, false));
+                        } else {
+                            total = task.getFileLength();
+                            dest = new BufferedOutputStream(new FileOutputStream(file, true));
+                        }
+                    }
+
+                    byte[] read = new byte[1024];
+                    int length;
+                    float percent = 0.0f;
+                    Log.d(TAG, "正在下载：" + task.getKey());
+                    while ((length = from.read(read)) != -1 && task.getStatus() != Task.PAUSE) {
+                        dest.write(read, 0, length);
+                        readLength += length;
+                        if (((float) readLength / total) - percent >= 0.001 || ((float) readLength / total) == 1) {
+                            percent = (float) readLength / total;
+                            task.setPercent(percent);
+                        }
+                        TaskManager.getInstance().notify(TaskManager.PROGRESS, task.getKey());
+                    }
+                    dest.flush();
+                    dest.close();
+                    from.close();
+                    if (task.getStatus() == Task.PAUSE) {
+                        TaskManager.getInstance().notify(TaskManager.DOWNLOAD_PAUSE, task.getKey());
+                    } else {
+                        TaskManager.getInstance().notify(TaskManager.DOWNLOAD_SUCCESS, task.getKey());
+                    }
                 }
             } else {
                 TaskManager.getInstance().notify(TaskManager.DOWNLOAD_FAILURE, task.getKey());
