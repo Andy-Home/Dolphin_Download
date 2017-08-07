@@ -40,7 +40,7 @@ public class DownloadThread implements Runnable {
             File file = null;
             String fileName = task.getFileName();
             if (fileName != null) {
-                file = new File(DownloadManager.downloadDirectory + File.separator + fileName);
+                file = new File(DownloadManager.getDownloadDirectory() + File.separator + fileName);
                 readLength = file.length();
                 con.setRequestProperty("RANGE", "bytes=" + readLength + "-");
                 Log.d(TAG, "RANGE:byte=" + readLength + "-");
@@ -74,7 +74,7 @@ public class DownloadThread implements Runnable {
                         fileName = getFileName(fileName);
                         task.setFileName(fileName);
 
-                        file = new File(DownloadManager.downloadDirectory + File.separator + fileName);
+                        file = new File(DownloadManager.getDownloadDirectory() + File.separator + fileName);
                     }
                     //写入数据
                     InputStream from = con.getInputStream();
@@ -149,7 +149,7 @@ public class DownloadThread implements Runnable {
             check = false;
         }
         //检索下载路径中是否已存在该路径名
-        File dir = new File(DownloadManager.downloadDirectory);
+        File dir = new File(DownloadManager.getDownloadDirectory());
         File[] files = dir.listFiles();
 
         int flag = 0;

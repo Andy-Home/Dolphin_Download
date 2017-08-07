@@ -23,11 +23,14 @@ public class DownloadManager {
     private final static String TAG = "DownloadManager";
     private static TaskManager mTaskManager;
     private static DownloadManager mDownloadManager;
-    public static String downloadDirectory;
+    private static String downloadDirectory;
+    private static String tempDirectory;
 
     private DownloadManager(Context context) {
         mTaskManager = TaskManager.getInstance();
         downloadDirectory = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
+        tempDirectory = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).getAbsolutePath();
+        Log.d(TAG, "临时目录路径：" + tempDirectory);
     }
 
     public static DownloadManager getInstance(Context context) {
@@ -106,5 +109,17 @@ public class DownloadManager {
      */
     public static List<Task> getTaskList() {
         return mTaskManager.getTaskList();
+    }
+
+    public static String getTempDirectory() {
+        return tempDirectory;
+    }
+
+    public static String getDownloadDirectory() {
+        return downloadDirectory;
+    }
+
+    public void setDownloadDirectory(String path) {
+        downloadDirectory = path;
     }
 }

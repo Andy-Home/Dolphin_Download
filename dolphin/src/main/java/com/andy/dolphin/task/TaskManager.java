@@ -9,7 +9,12 @@ import com.andy.dolphin.DolphinSubject;
 import com.andy.dolphin.DownloadManager;
 import com.andy.dolphin.thread.ThreadPool;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +70,54 @@ public class TaskManager implements DolphinSubject {
     private int downloadThreadNum = 3;
 
     private TaskManager() {
+        Log.d(TAG, "初始化");
         mPool = ThreadPool.getInstance();
+        //读取文件数据
+        mPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                //等待2s,等待DownloadManage获取到临时文件路径
+                try {
+                    Thread.sleep(2 * 1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                File file = new File(DownloadManager.getTempDirectory() + File.separator + "cacheTask");
+                Log.d(TAG, "文件路径：" + file.getAbsolutePath());
+                if (file.exists()) {
+                    try {
+                        Log.d(TAG, "读取文件数据");
+                        FileReader fileReader = new FileReader(file);
+                        BufferedReader reader = new BufferedReader(fileReader);
+                        String data;
+                        while ((data = reader.readLine()) != null) {
+                            Task task = new Task();
+                            task.parseFileFormatData(data);
+                            int status = task.getStatus();
+                            if (status == Task.START) {
+                                mRuningTaskList.add(task);
+                            } else if (status == Task.PAUSE || status == Task.ERROR) {
+                                mPauseTaskList.add(task);
+                            } else if (status == Task.WAIT) {
+                                mWaitTaskList.add(task);
+                            } else if (status == Task.FINISH) {
+                                mFinishTaskList.add(task);
+                            }
+                        }
+                        reader.close();
+                        fileReader.close();
+                        if (file.delete()) {
+                            Log.d(TAG, "删除 cacheTask 文件成功");
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Log.d(TAG, "cacheTask 文件不存在");
+                }
+            }
+        });
     }
 
     public static TaskManager getInstance() {
@@ -165,10 +217,10 @@ public class TaskManager implements DolphinSubject {
                     break;
                 case RESTART_TASK:
                     Log.d(TAG, "重启任务：" + task.key);
-                    task.status = Task.RESTART;
+                    task.status = Task.START;
                     if (mRuningTaskList.size() >= downloadThreadNum) {
                         Task t = mRuningTaskList.get(0);
-                        t.status = Task.PAUSE;
+                        t.status = Task.WAIT;
                         mWaitTaskList.add(t);
                         mRuningTaskList.remove(0);
                     }
@@ -183,7 +235,7 @@ public class TaskManager implements DolphinSubject {
                     break;
                 case PAUSE_TASK:
                     Log.d(TAG, "暂停任务：" + task.key);
-                    if (task.status == Task.START || task.status == Task.RESTART) {
+                    if (task.status == Task.START) {
                         task.status = Task.PAUSE;
                         mPauseTaskList.add(task);
                         mRuningTaskList.remove(task);
@@ -226,7 +278,7 @@ public class TaskManager implements DolphinSubject {
         //改变状态,下载线程结束
         task.status = Task.PAUSE;
         if (task.getFileName() != null) {
-            File file = new File(DownloadManager.downloadDirectory + File.separator + task.getFileName());
+            File file = new File(DownloadManager.getDownloadDirectory() + File.separator + task.getFileName());
             if (file.delete()) {
                 Log.d(TAG, task.getKey() + " 任务文件删除成功");
             }
@@ -293,6 +345,33 @@ public class TaskManager implements DolphinSubject {
             downloadThreadNum = 5;
         } else {
             downloadThreadNum = num;
+        }
+    }
+
+    /**
+     * 当应用程序要退出时,调用该方法保存信息
+     */
+    public void onDestory() {
+        File file = new File(DownloadManager.getTempDirectory() + File.separator + "cacheTask");
+        try {
+            FileWriter fileWriter = new FileWriter(file);
+            BufferedWriter writer = new BufferedWriter(fileWriter);
+            for (Task t : getTaskList()) {
+                Log.d(TAG, "写入内容：" + t.getFileFormatData());
+                writer.write(t.getFileFormatData());
+                writer.newLine();
+            }
+            writer.close();
+            fileWriter.close();
+            if (file.exists()) {
+                Log.d(TAG, "生成 cacheTask 文件");
+                Log.d(TAG, "文件路径：" + file.getAbsolutePath());
+            } else {
+                Log.d(TAG, "未生成 cacheTask 文件");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.andy.dolphin.thread.DownloadThread;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Random;
 
@@ -30,9 +31,9 @@ public class Task {
      */
     public static final int START = 1;
     public static final int PAUSE = 2;
-    public static final int RESTART = 3;
-    public static final int FINISH = 4;
-    public static final int ERROR = 5;
+    public static final int FINISH = 3;
+    public static final int ERROR = 4;
+    public static final int WAIT = 5;
 
     /**
      * URL
@@ -52,7 +53,7 @@ public class Task {
     /**
      * 文件已下载内容百分比
      */
-    private float percent;
+    private float percent = 0;
 
     /**
      * 下载线程
@@ -66,6 +67,10 @@ public class Task {
         int a = random.nextInt(1000);
         key = "andy" + a + System.currentTimeMillis();
         mDownloadThread = new DownloadThread(this);
+    }
+
+    //构造函数
+    Task() {
     }
 
     public URL getUrl() {
@@ -83,6 +88,7 @@ public class Task {
     public void setFileName(String fileName) {
         this.fileName = fileName;
         Log.d(TAG, "文件名:" + fileName);
+
     }
 
     public float getPercent() {
@@ -107,5 +113,41 @@ public class Task {
 
     public DownloadThread getDownloadThread() {
         return mDownloadThread;
+    }
+
+    public String getFileFormatData() {
+        String result = "";
+        result += "key=" + key + " ";
+        result += "status=" + status + " ";
+        result += "url=" + url.toString() + " ";
+        if (fileName != null) {
+            result += "fileName=" + fileName + " ";
+        }
+
+        if (fileLength != -1) {
+            result += "fileLength=" + fileLength + " ";
+        }
+
+        result += "percent=" + percent + " ";
+
+        return result;
+    }
+
+    public void parseFileFormatData(String data) {
+        String[] split = data.split(" ");
+        key = split[0].substring(5);
+        status = Integer.parseInt(split[1].substring(8));
+        String url = split[2].substring(5);
+        try {
+            this.url = new URL(url);
+        } catch (MalformedURLException e) {
+            Log.d(TAG, "数据解析异常");
+            e.printStackTrace();
+        }
+        if (split.length > 3) {
+            fileName = split[3].substring(10);
+            fileLength = Integer.parseInt(split[4].substring(12));
+            percent = Float.parseFloat(split[5].substring(9));
+        }
     }
 }
