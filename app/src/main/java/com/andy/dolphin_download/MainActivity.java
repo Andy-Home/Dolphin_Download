@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements DolphinObserver {
     private void findView() {
 
         mListView = (ListView) findViewById(R.id.list);
-
+        mTasks = TaskManager.getInstance().getTaskList();
         mAdapter = new DownloadAdapter(mTasks);
         mListView.setAdapter(mAdapter);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);

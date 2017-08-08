@@ -104,7 +104,7 @@ public class DownloadThread implements Runnable {
                     int length;
                     float percent = 0.0f;
                     Log.d(TAG, "正在下载：" + task.getKey());
-                    while ((length = from.read(read)) != -1 && task.getStatus() != Task.PAUSE) {
+                    while ((length = from.read(read)) != -1 && task.getStatus() != Task.PAUSE && task.getStatus() != Task.REMOVE) {
                         dest.write(read, 0, length);
                         readLength += length;
                         if (((float) readLength / total) - percent >= 0.001 || ((float) readLength / total) == 1) {

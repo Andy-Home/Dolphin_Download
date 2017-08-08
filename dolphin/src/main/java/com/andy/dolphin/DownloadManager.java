@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 
+import com.andy.dolphin.database.DbManager;
 import com.andy.dolphin.task.Task;
 import com.andy.dolphin.task.TaskManager;
 
@@ -26,6 +27,7 @@ public class DownloadManager {
     public static String downloadDirectory;
 
     private DownloadManager(Context context) {
+        DbManager.getInstance().init(context);
         mTaskManager = TaskManager.getInstance();
         downloadDirectory = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
     }
