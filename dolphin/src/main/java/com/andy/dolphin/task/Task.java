@@ -151,6 +151,9 @@ public class Task {
         return mDownloadThread;
     }
 
+    public void setDownloadThread(DownloadThread mDownloadThread) {
+        this.mDownloadThread = mDownloadThread;
+    }
 
     public void setKey(String key) {
         this.key = key;

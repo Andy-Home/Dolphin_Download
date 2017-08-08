@@ -9,6 +9,7 @@ import com.andy.dolphin.DolphinSubject;
 import com.andy.dolphin.DownloadManager;
 import com.andy.dolphin.database.DbManager;
 import com.andy.dolphin.database.TaskDao;
+import com.andy.dolphin.thread.DownloadThread;
 import com.andy.dolphin.thread.ThreadPool;
 
 import java.io.File;
@@ -67,6 +68,11 @@ public class TaskManager implements DolphinSubject {
      */
     private int downloadThreadNum = 3;
 
+    /**
+     * 是否能够在应用启动时开始下载, true表示启动时下载
+     */
+    private boolean enable = false;
+
     private TaskDao mTaskDao;
 
     private TaskManager() {
@@ -102,7 +108,7 @@ public class TaskManager implements DolphinSubject {
                         .where(TaskDao.Properties.Status.eq(Task.FINISH))
                         .orderAsc(TaskDao.Properties.Key)
                         .list();
-                //更新正在运行中的任务的进度值
+                //更新正在运行中的任务的进度值以及初始化 DownloadThread
                 for (Task task : mRuningTaskList) {
                     if (task.getFileName() != null) {
                         File file = new File(DownloadManager.downloadDirectory + File.separator + task.getFileName());
@@ -112,6 +118,21 @@ public class TaskManager implements DolphinSubject {
                         }
                         float percent = (float) file.length() / task.getFileLength();
                         task.setPercent(percent);
+                    }
+                    task.setDownloadThread(new DownloadThread(task));
+                    if (enable) {
+                        mPool.execute(task.getDownloadThread());
+                    } else {
+                        task.status = Task.PAUSE;
+                    }
+                }
+                for (Task task : mPauseTaskList) {
+                    task.setDownloadThread(new DownloadThread(task));
+                }
+                for (Task task : mWaitTaskList) {
+                    task.setDownloadThread(new DownloadThread(task));
+                    if (!enable) {
+                        task.status = Task.PAUSE;
                     }
                 }
                 //提示订阅者获取信息
@@ -361,5 +382,12 @@ public class TaskManager implements DolphinSubject {
         } else {
             downloadThreadNum = num;
         }
+    }
+
+    /**
+     * 允许应用启动时开启下载
+     */
+    public void enableStartInBoot() {
+        enable = true;
     }
 }

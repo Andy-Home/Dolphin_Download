@@ -49,7 +49,7 @@ public class TaskDao extends AbstractDao<Task, String> {
      * Creates the underlying database table.
      */
     public static void createTable(Database db, boolean ifNotExists) {
-        String constraint = ifNotExists ? "IF NOT EXISTS " : "";
+        String constraint = ifNotExists ? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"task_list\" (" + //
                 "\"KEY\" TEXT PRIMARY KEY NOT NULL ," + // 0: key
                 "\"STATUS\" INTEGER NOT NULL ," + // 1: status
@@ -71,7 +71,7 @@ public class TaskDao extends AbstractDao<Task, String> {
     @Override
     protected final void bindValues(DatabaseStatement stmt, Task entity) {
         stmt.clearBindings();
-
+ 
         String key = entity.getKey();
         if (key != null) {
             stmt.bindString(1, key);
@@ -90,7 +90,7 @@ public class TaskDao extends AbstractDao<Task, String> {
     @Override
     protected final void bindValues(SQLiteStatement stmt, Task entity) {
         stmt.clearBindings();
-
+ 
         String key = entity.getKey();
         if (key != null) {
             stmt.bindString(1, key);
@@ -115,7 +115,7 @@ public class TaskDao extends AbstractDao<Task, String> {
     @Override
     public String readKey(Cursor cursor, int offset) {
         return cursor.isNull(offset + 0) ? null : cursor.getString(offset + 0);
-    }
+    }    
 
     @Override
     public Task readEntity(Cursor cursor, int offset) {
@@ -139,12 +139,12 @@ public class TaskDao extends AbstractDao<Task, String> {
         entity.setFileLength(cursor.getInt(offset + 4));
         entity.setPercent(cursor.getFloat(offset + 5));
      }
-
+    
     @Override
     protected final String updateKeyAfterInsert(Task entity, long rowId) {
         return entity.getKey();
     }
-
+    
     @Override
     public String getKey(Task entity) {
         if (entity != null) {
