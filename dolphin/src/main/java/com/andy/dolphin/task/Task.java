@@ -4,7 +4,12 @@ import android.util.Log;
 
 import com.andy.dolphin.thread.DownloadThread;
 
-import java.net.URL;
+import org.greenrobot.greendao.annotation.Entity;
+import org.greenrobot.greendao.annotation.Generated;
+import org.greenrobot.greendao.annotation.Id;
+import org.greenrobot.greendao.annotation.Index;
+import org.greenrobot.greendao.annotation.NotNull;
+
 import java.util.Random;
 
 /**
@@ -12,19 +17,11 @@ import java.util.Random;
  * <p>
  * Created by andy on 17-7-31.
  */
-
+@Entity(indexes = {
+        @Index(value = "key", unique = true)
+})
 public class Task {
-    private final String TAG = "Task";
-    /**
-     * 唯一标识
-     */
-    String key;
-
-    /**
-     * 下载状态
-     */
-    int status;
-
+    private static final String TAG = "Task";
     /**
      * 状态值
      */
@@ -34,10 +31,26 @@ public class Task {
     public static final int FINISH = 4;
     public static final int ERROR = 5;
 
+    @Id(autoincrement = true)
+    private long id;
+
+    /**
+     * 唯一标识
+     */
+    @NotNull
+    String key;
+
+    /**
+     * 下载状态
+     */
+    @NotNull
+    int status;
+
     /**
      * URL
      */
-    private URL url;
+    @NotNull
+    private String url;
 
     /**
      * 下载的文件名
@@ -57,9 +70,9 @@ public class Task {
     /**
      * 下载线程
      */
-    private DownloadThread mDownloadThread;
+    private static DownloadThread mDownloadThread;
 
-    public Task(URL url) {
+    public Task(String url) {
         this.url = url;
         status = START;
         Random random = new Random();
@@ -68,7 +81,23 @@ public class Task {
         mDownloadThread = new DownloadThread(this);
     }
 
-    public URL getUrl() {
+    @Generated(hash = 212695871)
+    public Task(long id, @NotNull String key, int status, @NotNull String url,
+                String fileName, int fileLength, float percent) {
+        this.id = id;
+        this.key = key;
+        this.status = status;
+        this.url = url;
+        this.fileName = fileName;
+        this.fileLength = fileLength;
+        this.percent = percent;
+    }
+
+    @Generated(hash = 733837707)
+    public Task() {
+    }
+
+    public String getUrl() {
         return url;
     }
 
@@ -105,7 +134,27 @@ public class Task {
         this.fileLength = fileLength;
     }
 
-    public DownloadThread getDownloadThread() {
+    DownloadThread getDownloadThread() {
         return mDownloadThread;
+    }
+
+    public long getId() {
+        return this.id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

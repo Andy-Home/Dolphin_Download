@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -27,7 +28,12 @@ public class DownloadThread implements Runnable {
     private Task task;
 
     public DownloadThread(Task task) {
-        url = task.getUrl();
+        try {
+            url = new URL(task.getUrl());
+        } catch (MalformedURLException e) {
+            Log.e(TAG, "解析链接错误");
+            e.printStackTrace();
+        }
         this.task = task;
     }
 

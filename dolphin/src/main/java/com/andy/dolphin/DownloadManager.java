@@ -44,7 +44,7 @@ public class DownloadManager {
      * @return {@link Task}
      */
     public static Task download(URL url) {
-        Task task = new Task(url);
+        Task task = new Task(url.toString());
         mTaskManager.addTask(task);
         return task;
     }
