@@ -27,7 +27,7 @@ public class Task {
      */
     public static final int START = 1;
     public static final int PAUSE = 2;
-    public static final int RESTART = 3;
+    public static final int WAIT = 3;
     public static final int FINISH = 4;
     public static final int ERROR = 5;
 

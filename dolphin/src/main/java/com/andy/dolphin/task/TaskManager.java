@@ -147,7 +147,7 @@ public class TaskManager implements DolphinSubject {
                     break;
                 case ADD_TASK:
                     Log.d(TAG, "添加任务：" + task.key);
-                    task.status = Task.PAUSE;
+                    task.status = Task.WAIT;
                     startNewTask();
                     break;
                 case REMOVE_TASK:
@@ -165,10 +165,10 @@ public class TaskManager implements DolphinSubject {
                     break;
                 case RESTART_TASK:
                     Log.d(TAG, "重启任务：" + task.key);
-                    task.status = Task.RESTART;
+                    task.status = Task.START;
                     if (mRuningTaskList.size() >= downloadThreadNum) {
                         Task t = mRuningTaskList.get(0);
-                        t.status = Task.PAUSE;
+                        t.status = Task.WAIT;
                         mWaitTaskList.add(t);
                         mRuningTaskList.remove(0);
                     }
@@ -183,7 +183,7 @@ public class TaskManager implements DolphinSubject {
                     break;
                 case PAUSE_TASK:
                     Log.d(TAG, "暂停任务：" + task.key);
-                    if (task.status == Task.START || task.status == Task.RESTART) {
+                    if (task.status == Task.START) {
                         task.status = Task.PAUSE;
                         mPauseTaskList.add(task);
                         mRuningTaskList.remove(task);
